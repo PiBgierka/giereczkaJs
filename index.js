@@ -57,7 +57,8 @@ function create() {
   ship.body.collideWorldBounds = true;
   ship.body.immovable = true;
 
-  enemy = this.physics
+  enemy = this.physics.add.sprite(250, 350, "enemy");
+  
 
   cursors = this.input.keyboard.createCursorKeys();
 }
