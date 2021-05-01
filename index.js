@@ -30,9 +30,8 @@ var gameoverText;
 function preload() {
   this.load.baseURL = "https://examples.phaser.io/assets/";
   this.load.crossOrigin = "anonymous";
-  this.load.image("ball", "games/breakout/ball.png");
   this.load.image("ship", "games/defender/ship.png");
-  this.load.image("bullet", "games/breakout/brick1.png");
+  this.load.image("bullet", "games/orbit/ball.png");
   this.load.image("background", "games/invaders/starfield.png");
 
   this.load.spritesheet("enemy", "games/starstruck/droid.png", {
@@ -42,18 +41,9 @@ function preload() {
 }
 
 function create() {
-  let back = this.add.tileSprite(0, 28, 500, 300, "background");
+  let back = this.add.tileSprite(0, 0, 680, 400, "background");
   back.setOrigin(0);
   back.setScrollFactor(0);
-  ball = this.physics.add.sprite(250, 350, "ball");
-  ball.setOrigin(0.5, 0.5);
-
-  ball.body.velocity.x = 100;
-  ball.body.velocity.y = -150;
-  ball.body.bounce.set(1);
-
-  ball.body.setCollideWorldBounds(true);
-  ball.body.onWorldBounds = true;
 
   ship = this.physics.add.sprite(150, 380, "ship");
   ship.setOrigin(0.5);
@@ -89,4 +79,18 @@ function update() {
   } else if (cursors.right.isDown) {
     ship.body.velocity.x = 250;
   }
+  if (cursors.space.isDown) {
+    bullet = this.physics.add.sprite(ship.x, ship.y, "bullet");
+    bullet.setOrigin(0.5, 0.5);
+    bullet.body.setCollideWorldBounds(true);
+    bullet.body.onWorldBounds = true;
+    bullet.body.velocity.x = 250;
+  }
+  try {
+    this.physics.collide(bullet, enemy, hitEnemy);
+  } catch {}
+}
+
+function hitEnemy(bullets, enemies) {
+  bullets.disableBody(true, true);
 }
