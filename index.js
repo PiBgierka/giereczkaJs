@@ -34,11 +34,10 @@ function preload() {
   this.load.image("ship", "games/defender/ship.png");
   this.load.image("brick", "games/breakout/brick1.png");
 
-
-  this.load.spritesheet('enemy',
-    'games/starstruck/droid.png',
-    { frameWidth: 32, frameHeight: 48 }
-  );
+  this.load.spritesheet("enemy", "games/starstruck/droid.png", {
+    frameWidth: 32,
+    frameHeight: 32
+  });
 }
 
 function create() {
@@ -58,7 +57,10 @@ function create() {
   ship.body.immovable = true;
 
   enemy = this.physics.add.sprite(250, 350, "enemy");
-  
+  enemy.setOrigin(0.5);
+  enemy.body.collideWorldBounds = true;
+  enemy.body.immovable = true;
+  enemy.animations.add('flying',Animation.create)
 
   cursors = this.input.keyboard.createCursorKeys();
 }
