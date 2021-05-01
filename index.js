@@ -22,7 +22,7 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
-var ball, ship, enemy;
+var ball, ship, enemy, bullet;
 var bricks;
 var cursors;
 var gameoverText;
@@ -32,7 +32,8 @@ function preload() {
   this.load.crossOrigin = "anonymous";
   this.load.image("ball", "games/breakout/ball.png");
   this.load.image("ship", "games/defender/ship.png");
-  this.load.image("brick", "games/breakout/brick1.png");
+  this.load.image("bullet", "games/breakout/brick1.png");
+  this.load.image("background", "games/invaders/starfield.png");
 
   this.load.spritesheet("enemy", "games/starstruck/droid.png", {
     frameWidth: 32,
@@ -41,6 +42,9 @@ function preload() {
 }
 
 function create() {
+  let back = this.add.tileSprite(0, 28, 500, 300, "background");
+  back.setOrigin(0);
+  back.setScrollFactor(0);
   ball = this.physics.add.sprite(250, 350, "ball");
   ball.setOrigin(0.5, 0.5);
 
@@ -56,16 +60,23 @@ function create() {
   ship.body.collideWorldBounds = true;
   ship.body.immovable = true;
 
-  enemy = this.physics.add.sprite(250, 350, "enemy");
+  enemy = this.physics.add.sprite(500, 30, "enemy");
   enemy.setOrigin(0.5);
   enemy.body.collideWorldBounds = true;
   enemy.body.immovable = true;
-  enemy.animations.add('flying',Animation.create)
 
   cursors = this.input.keyboard.createCursorKeys();
+
+  this.anims.create({
+    key: "fly",
+    frames: this.anims.generateFrameNumbers("enemy", { start: 0, end: 3 }),
+    frameRate: 10,
+    repeat: -1
+  });
 }
 
 function update() {
+  enemy.anims.play("fly", true);
   ship.body.velocity.y = 0;
   if (cursors.up.isDown) {
     ship.body.velocity.y = -250;
