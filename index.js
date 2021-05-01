@@ -22,7 +22,7 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
-var ball, ship;
+var ball, ship, enemy;
 var bricks;
 var cursors;
 var gameoverText;
@@ -33,6 +33,12 @@ function preload() {
   this.load.image("ball", "games/breakout/ball.png");
   this.load.image("ship", "games/defender/ship.png");
   this.load.image("brick", "games/breakout/brick1.png");
+
+
+  this.load.spritesheet('enemy',
+    'games/starstruck/droid.png',
+    { frameWidth: 32, frameHeight: 48 }
+  );
 }
 
 function create() {
@@ -50,6 +56,8 @@ function create() {
   ship.setOrigin(0.5);
   ship.body.collideWorldBounds = true;
   ship.body.immovable = true;
+
+  enemy = this.physics
 
   cursors = this.input.keyboard.createCursorKeys();
 }
