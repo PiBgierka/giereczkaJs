@@ -17,16 +17,20 @@ var config = {
   scene: {
     preload: preload,
     create: create,
-    update: update
+    update: update,
+    function: startNextLevel
   }
 };
 
 var game = new Phaser.Game(config);
 var ball, ship, enemy, bullet;
-var bricks;
+var enemies, bullets;
 var cursors;
-var gameoverText;
-
+var counter = 0;
+var timesHited;
+var level = 0;
+var stage = 0;
+var enemiesCount = 0;
 function preload() {
   this.load.baseURL = "https://examples.phaser.io/assets/";
   this.load.crossOrigin = "anonymous";
@@ -50,10 +54,15 @@ function create() {
   ship.body.collideWorldBounds = true;
   ship.body.immovable = true;
 
-  enemy = this.physics.add.sprite(500, 30, "enemy");
-  enemy.setOrigin(0.5);
-  enemy.body.collideWorldBounds = true;
-  enemy.body.immovable = true;
+  this.enemies = this.physics.add.group();
+  this.bullets = this.physics.add.group();
+
+  startNextLevel(this.physics, this.enemies);
+
+  this.physics.add.collider(this.bullets, this.enemies, function(bull, enem) {
+    bull.disableBody(true, true);
+    hitEnemy(enem);
+  });
 
   cursors = this.input.keyboard.createCursorKeys();
 
@@ -66,7 +75,50 @@ function create() {
 }
 
 function update() {
-  enemy.anims.play("fly", true);
+  counter++;
+  movement();
+
+  //shooting
+  if (cursors.space.isDown && counter > 20) {
+    counter = 0;
+    bullet = this.physics.add.sprite(ship.x, ship.y, "bullet");
+    bullet.setOrigin(0.5, 0.5);
+    bullet.body.setCollideWorldBounds(true);
+    bullet.body.onWorldBounds = true;
+    bullet.body.velocity.x = 250;
+    this.bullets.add(bullet);
+    for (var i = 0; i < this.bullets.getChildren().length; i++) {
+      var bull = this.bullets.getChildren()[i];
+      bull.setOrigin(0.5, 0.5);
+      bull.body.setCollideWorldBounds(true);
+      bull.body.onWorldBounds = true;
+      bull.body.velocity.x = 250;
+    }
+  }
+  if (enemiesCount == 0) {
+    startNextLevel(this.physics, this.enemies);
+  }
+}
+function hitEnemy(enem) {
+  enem.disableBody(true, true);
+  enemiesCount--;
+}
+function startNextLevel(physics, enemies) {
+  level++;
+  enemiesCount = level;
+  for (var i = 1; i <= level; i++) {
+    enemy = physics.add.sprite(500, 30 * i, "enemy");
+    enemy.setOrigin(0.5);
+    enemy.body.collideWorldBounds = true;
+    enemy.body.immovable = true;
+    enemies.add(enemy);
+  }
+  // for (var i = 0; i < this.enemies.getChildren().length; i++) {
+  //   var enem = this.enemies.getChildren()[i];
+  //   enem.anims.play("fly", true);
+  // }
+}
+function movement() {
   ship.body.velocity.y = 0;
   if (cursors.up.isDown) {
     ship.body.velocity.y = -250;
@@ -79,18 +131,4 @@ function update() {
   } else if (cursors.right.isDown) {
     ship.body.velocity.x = 250;
   }
-  if (cursors.space.isDown) {
-    bullet = this.physics.add.sprite(ship.x, ship.y, "bullet");
-    bullet.setOrigin(0.5, 0.5);
-    bullet.body.setCollideWorldBounds(true);
-    bullet.body.onWorldBounds = true;
-    bullet.body.velocity.x = 250;
-  }
-  try {
-    this.physics.collide(bullet, enemy, hitEnemy);
-  } catch {}
-}
-
-function hitEnemy(bullets, enemies) {
-  bullets.disableBody(true, true);
 }
