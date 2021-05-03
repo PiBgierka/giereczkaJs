@@ -57,21 +57,21 @@ function create() {
   this.enemies = this.physics.add.group();
   this.bullets = this.physics.add.group();
 
-  startNextLevel(this.physics, this.enemies);
-
-  this.physics.add.collider(this.bullets, this.enemies, function(bull, enem) {
-    bull.disableBody(true, true);
-    hitEnemy(enem);
-  });
-
-  cursors = this.input.keyboard.createCursorKeys();
-
   this.anims.create({
     key: "fly",
     frames: this.anims.generateFrameNumbers("enemy", { start: 0, end: 3 }),
     frameRate: 10,
     repeat: -1
   });
+
+  startNextLevel(this.physics, this.enemies);
+
+  this.physics.add.collider(this.bullets, this.enemies, function(bull, enem) {
+    bull.disableBody(true, true);
+    hitEnemy(enem, this.enemies);
+  });
+
+  cursors = this.input.keyboard.createCursorKeys();
 }
 
 function update() {
@@ -99,7 +99,15 @@ function update() {
     startNextLevel(this.physics, this.enemies);
   }
 }
-function hitEnemy(enem) {
+function hitEnemy(enem, enemies) {
+  var index;
+  for (var i = 0; i < enemies.getChildren().length; i++) {
+    if (enemies.getChildren()[i] == enem) {
+      index = i;
+      console.log(index);
+      break;
+    }
+  }
   enem.disableBody(true, true);
   enemiesCount--;
 }
@@ -113,10 +121,10 @@ function startNextLevel(physics, enemies) {
     enemy.body.immovable = true;
     enemies.add(enemy);
   }
-  // for (var i = 0; i < this.enemies.getChildren().length; i++) {
-  //   var enem = this.enemies.getChildren()[i];
-  //   enem.anims.play("fly", true);
-  // }
+  for (var i = 0; i < enemies.getChildren().length; i++) {
+    var enem = enemies.getChildren()[i];
+    enem.anims.play("fly", true);
+  }
 }
 function movement() {
   ship.body.velocity.y = 0;
