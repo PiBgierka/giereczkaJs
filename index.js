@@ -24,7 +24,7 @@ var config = {
 
 var game = new Phaser.Game(config);
 var ball, ship, enemy, bullet;
-var enemies, bullets;
+var enemies, bullets, rocks;
 var cursors;
 var counter = 0;
 var timesHited;
@@ -35,6 +35,7 @@ var enemiesHp = [0, 0, 0, 0, 0];
 var PlayerHP = 3;
 var shootCooldown = 0;
 var enemyBullet;
+var flyingRock;
 var enemyBullets;
 var gameoverText;
 var score = 0;
@@ -43,7 +44,7 @@ var starGroup;
 var scoreCount = 0;
 var HPP = document.getElementById("HPP");
 var scoreID = document.getElementById("scoreP");
-
+var rockTime = 0;
 function preload() {
   this.load.baseURL = "https://examples.phaser.io/assets/";
   this.load.crossOrigin = "anonymous";
@@ -52,7 +53,7 @@ function preload() {
   this.load.image("enemybullet", "games/invaders/enemy-bullet.png");
   this.load.image("background", "games/invaders/starfield.png");
   this.load.image("star", "games/starstruck/star.png");
-
+  this.load.image("rock", "games/asteroids/asteroid2.png");
   this.load.spritesheet("enemy", "games/starstruck/droid.png", {
     frameWidth: 32,
     frameHeight: 32
@@ -70,6 +71,7 @@ function create() {
   ship.body.immovable = true;
 
   this.enemies = this.physics.add.group();
+  this.rocks = this.physics.add.group();
   this.bullets = this.physics.add.group();
   this.enemyBullets = this.physics.add.group();
   this.starGroup = this.physics.add.group();
@@ -84,7 +86,7 @@ function create() {
     repeat: -1
   });
 
-  startNextLevel(this.physics, this.enemies);
+  startNextLevel(this.physics, this.enemies, this.rocks);
 
   this.physics.add.collider(this.bullets, this.enemies, function(bull, enem) {
     enem.body.velocity.x = 0;
@@ -106,7 +108,15 @@ function create() {
       gameoverText.visible = true;
     }
   });
-
+  this.physics.add.collider(this.rocks, ship, function(ship, rock) {
+    rock.disableBody(true, true);
+    PlayerHP--;
+    HPP.innerHTML = "HP: " + PlayerHP;
+    if (PlayerHP == 0) {
+      ship.disableBody(true, true);
+      gameoverText.visible = true;
+    }
+  });
   gameoverText = this.add.text(
     this.physics.world.bounds.centerX,
     200,
@@ -122,6 +132,7 @@ function update() {
   counter++;
   shootCooldown++;
   scoreCount++;
+  rockTime++;
   movement();
 
   //shooting
@@ -141,6 +152,14 @@ function update() {
       bull.body.velocity.x = 250;
     }
   }
+  //clear bullets
+  for (var i = 0; i < this.bullets.getChildren().length; i++) {
+    var bull = this.bullets.getChildren()[i];
+    if (bull.x >= 655) {
+      bull.disableBody(true, true);
+      this.bullets.remove(bull, true, true);
+    }
+  }
   if (shootCooldown > 200) {
     try {
       shootCooldown = 0;
@@ -157,9 +176,36 @@ function update() {
         bull.body.setCollideWorldBounds(false);
 
         bull.body.onWorldBounds = true;
-       bull.body.velocity.x = -250;
+        bull.body.velocity.x = -250;
         if (bull.body.velocity.y == 0)
           bull.body.velocity.y = ((ship.y - bull.y) / (ship.x - bull.x)) * -250;
+      }
+    } catch {}
+  }
+  if (rockTime > 400) {
+    flyingRock = this.physics.add.sprite(400, 30, "rock");
+    flyingRock.setOrigin(0.5);
+    flyingRock.body.immovable = true;
+    this.rocks.add(flyingRock);
+    try {
+      rockTime = 0;
+
+      //var index = Math.floor((Math.random() * 100) % enemiesCount);
+      flyingRock = this.physics.add.sprite(
+        this.rocks.getChildren()[this.rocks.getChildren().length].x,
+        this.rocks.getChildren()[this.rocks.getChildren().length].y,
+        "rock"
+      );
+      this.rocks.add(flyingRock);
+      for (var i = 0; i < this.rocks.getChildren().length; i++) {
+        var r = this.rocks.getChildren()[i];
+        r.setOrigin(0.5, 0.5);
+        r.body.setCollideWorldBounds(false);
+
+        r.body.onWorldBounds = true;
+        r.body.velocity.x = -250;
+        if (r.body.velocity.y == 0)
+          r.body.velocity.y = ((ship.y - r.y) / (ship.x - r.x)) * -250;
       }
     } catch {}
   }
@@ -183,10 +229,10 @@ function update() {
   }
   if (enemiesCount == 0) {
     this.enemies.clear(true);
-    startNextLevel(this.physics, this.enemies);
+    startNextLevel(this.physics, this.enemies, this.rocks);
   }
 }
-function startNextLevel(physics, enemies) {
+function startNextLevel(physics, enemies, rocks) {
   level++;
   enemiesCount = level % 5;
 
@@ -200,6 +246,7 @@ function startNextLevel(physics, enemies) {
     enemy.body.immovable = true;
     enemies.add(enemy);
   }
+
   for (var i = 0; i < enemies.getChildren().length; i++) {
     var enem = enemies.getChildren()[i];
     enem.anims.play("fly", true);
