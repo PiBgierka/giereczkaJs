@@ -106,7 +106,7 @@ function create() {
     this.miniBossGroup,
     this.damageBoss
   );
-  fizyka = this.physics;
+  this.fizyka = this.physics;
   this.physics.add.collider(this.bullets, this.miniBossGroup, function(
     bull,
     enem
@@ -132,7 +132,7 @@ function create() {
         this.level++;
         this.damageBoss = false;
         startNextLevel(
-          game.physics,
+          this.fizyka,
           this.enemies,
           this.rocks,
           this.bossGroup,
@@ -330,6 +330,7 @@ function startNextLevel(
   damageBoss
 ) {
   // var physics = this.physics;
+  //physics = Phaser.Physics;
   level++;
   if (level % 2 != 0) {
     enemiesCount = level % 5;
