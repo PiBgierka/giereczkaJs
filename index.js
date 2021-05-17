@@ -41,10 +41,14 @@ var gameoverText;
 var score = 0;
 var star;
 var starGroup;
-var boss;
+var boss = {};
+boss.dmg = false;
+var miniBoss;
 var bossHp;
+var damageBoss = false;
 var scoreCount = 0;
 var HPP = document.getElementById('HPP');
+var BHP = document.getElementById('BHP');
 var scoreID = document.getElementById('scoreP');
 var rockTime = 0;
 function preload() {
@@ -55,13 +59,18 @@ function preload() {
   this.load.image('enemybullet', 'games/invaders/enemy-bullet.png');
   this.load.image('background', 'games/invaders/starfield.png');
   this.load.image('star', 'games/starstruck/star.png');
+  this.load.spritesheet('boss', 'sprites/invaderpig.png', {
+    frameWidth: 128,
+    frameHeight: 104
+  });
+  this.load.image('miniboss', 'games/invaders/invader.png');
   this.load.image('rock', 'games/asteroids/asteroid2.png');
   this.load.spritesheet('enemy', 'games/starstruck/droid.png', {
     frameWidth: 32,
     frameHeight: 32
   });
 }
-
+var fizyka;
 function create() {
   let back = this.add.tileSprite(0, 0, 680, 400, 'background');
   back.setOrigin(0);
@@ -77,7 +86,8 @@ function create() {
   this.bullets = this.physics.add.group();
   this.enemyBullets = this.physics.add.group();
   this.starGroup = this.physics.add.group();
-
+  this.bossGroup = this.physics.add.group();
+  this.miniBossGroup = this.physics.add.group();
   HPP.innerHTML = 'HP: ' + PlayerHP;
   scoreID.innerHTML = 'Score: ' + score;
 
@@ -88,8 +98,53 @@ function create() {
     repeat: -1
   });
 
-  startNextLevel(this.physics, this.enemies, this.rocks);
-
+  startNextLevel(
+    this.physics,
+    this.enemies,
+    this.rocks,
+    this.bossGroup,
+    this.miniBossGroup,
+    this.damageBoss
+  );
+  fizyka = this.physics;
+  this.physics.add.collider(this.bullets, this.miniBossGroup, function(
+    bull,
+    enem
+  ) {
+    enem.body.velocity.x = 0;
+    enem.hp--;
+    bull.disableBody(true, true);
+    console.log(enem.hp);
+    if (enem.hp <= 0) {
+      enem.disableBody(true, true);
+    }
+  });
+  var p = this.physics;
+  this.physics.add.collider(this.bullets, this.bossGroup, function(bull, enem) {
+    if (enem.dmg) {
+      enem.body.velocity.x = 0;
+      enem.hp--;
+      BHP.innerHTML = 'BOSS (OSŁABIONY): ' + enem.hp;
+      bull.disableBody(true, true);
+      console.log('boss:' + enem.hp);
+      if (enem.hp <= 0) {
+        enem.disableBody(true, true);
+        this.level++;
+        this.damageBoss = false;
+        startNextLevel(
+          game.physics,
+          this.enemies,
+          this.rocks,
+          this.bossGroup,
+          this.miniBossGroup,
+          this.damageBoss
+        );
+      }
+    } else {
+      enem.body.velocity.x = 0;
+      bull.disableBody(true, true);
+    }
+  });
   this.physics.add.collider(this.bullets, this.enemies, function(bull, enem) {
     enem.body.velocity.x = 0;
     bull.disableBody(true, true);
@@ -100,7 +155,15 @@ function create() {
       enemiesCount--;
     }
   });
-
+  this.physics.add.collider(this.miniBossGroup, ship, function(ship, bull) {
+    bull.disableBody(true, true);
+    PlayerHP--;
+    HPP.innerHTML = 'HP: ' + PlayerHP;
+    if (PlayerHP == 0) {
+      ship.disableBody(true, true);
+      gameoverText.visible = true;
+    }
+  });
   this.physics.add.collider(this.enemyBullets, ship, function(ship, bull) {
     bull.disableBody(true, true);
     PlayerHP--;
@@ -214,6 +277,20 @@ function update() {
       r.body.velocity.y = ile;
     }
   }
+  if (this.miniBossGroup.getChildren().length != 0) {
+    for (var i = 0; i < this.miniBossGroup.getChildren().length; i++) {
+      var r = this.miniBossGroup.getChildren()[i];
+      if (ship.x > r.x) continue;
+      var ile = ship.y > r.y ? 50 : -50;
+      r.body.velocity.y = ile;
+      if (0 < r.x) r.body.velocity.x = -50 - Math.random() * 100;
+      else {
+        r.body.velocity.x = 0;
+        r.disableBody(true, true);
+        this.miniBossGroup.remove(r, true, true);
+      }
+    }
+  }
   if (scoreCount > 600) {
     scoreCount = 0;
     star = this.physics.add.sprite(680, (Math.random() * 1000) % 400, 'star');
@@ -234,12 +311,27 @@ function update() {
   }
   if (enemiesCount == 0) {
     this.enemies.clear(true);
-    startNextLevel(this.physics, this.enemies, this.rocks);
+    startNextLevel(
+      this.physics,
+      this.enemies,
+      this.rocks,
+      this.bossGroup,
+      this.miniBossGroup,
+      this.damageBoss
+    );
   }
 }
-function startNextLevel(physics, enemies, rocks) {
+function startNextLevel(
+  physics,
+  enemies,
+  rocks,
+  bossGroup,
+  miniBossGroup,
+  damageBoss
+) {
+  // var physics = this.physics;
   level++;
-  if (1) {
+  if (level % 2 != 0) {
     enemiesCount = level % 5;
     for (var i = 0; i < enemiesCount; i++) {
       enemiesHp[i] = Math.floor(level / 5);
@@ -258,8 +350,55 @@ function startNextLevel(physics, enemies, rocks) {
     }
   } else {
     //spawnBoosa
+    damageBoss = false;
+    BHP.innerHTML = 'BOSS (NIEŚMIERTELNY)';
     enemiesCount = 1;
-    bossHp = level;
+    boss = physics.add.sprite(490, 200, 'boss');
+
+    boss.hp = level * 1;
+    boss.dmg = false;
+    for (var ind = 0; ind < 6; ind++) {
+      miniBoss = physics.add.sprite(490 - 10 * ind, 200 + 15 * ind, 'miniboss');
+      //miniBoss.body.velocity.x = -350;
+      miniBoss.hp = Math.floor(level / 5);
+      miniBossGroup.add(miniBoss);
+    }
+    setTimeout(function() {
+      for (var ind = 0; ind < 6; ind++) {
+        miniBoss = physics.add.sprite(
+          490 - 10 * ind,
+          200 + 10 * ind,
+          'miniboss'
+        );
+        miniBoss.hp = Math.floor((level * 1.5) / 5);
+        miniBossGroup.add(miniBoss);
+      }
+    }, 7000);
+
+    setTimeout(function() {
+      BHP.innerHTML = 'BOSS (OSŁABIONY): ' + boss.hp;
+      boss.dmg = true;
+    }, 12000);
+    setTimeout(function() {
+      boss.dmg = false;
+      BHP.innerHTML = 'BOSS (NIEŚMIERTELNY)';
+      for (var ind = 0; ind < 6; ind++) {
+        miniBoss = physics.add.sprite(
+          490 - 10 * ind,
+          200 + 10 * ind,
+          'miniboss'
+        );
+        miniBoss.hp = Math.floor((level * 2) / 5);
+        miniBossGroup.add(miniBoss);
+      }
+    }, 15000);
+    setTimeout(function() {
+      BHP.innerHTML = 'BOSS (OSŁABIONY): ' + boss.hp;
+      boss.dmg = true;
+    }, 30000);
+
+    enemy.body.immovable = true;
+    bossGroup.add(boss);
   }
 }
 function movement() {
