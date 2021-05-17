@@ -148,9 +148,8 @@ function create() {
   this.physics.add.collider(this.bullets, this.enemies, function(bull, enem) {
     enem.body.velocity.x = 0;
     bull.disableBody(true, true);
-    var index = enem.y / 60 - 1;
-    enemiesHp[index]--;
-    if (enemiesHp[index] == 0) {
+    enem.hp--;
+    if (enem.hp <= 0) {
       enem.disableBody(true, true);
       enemiesCount--;
     }
@@ -229,7 +228,15 @@ function update() {
     this.game.paused = !this.game.paused;
     try {
       shootCooldown = 0;
-      var index = Math.floor((Math.random() * 100) % enemiesCount);
+      var index = Math.floor((Math.random() * 100) % (level % 5));
+
+      while (this.enemies.getChildren()[index].hp <= 0) {
+        index++;
+        Console.log(index);
+        if (index >= level % 5) {
+          index = 0;
+        }
+      }
       enemyBullet = this.physics.add.sprite(
         this.enemies.getChildren()[index].x,
         this.enemies.getChildren()[index].y,
@@ -332,14 +339,12 @@ function startNextLevel(
   // var physics = this.physics;
   //physics = Phaser.Physics;
   level++;
-  if (level % 2 != 0) {
+  if (level % 5 != 0) {
     enemiesCount = level % 5;
-    for (var i = 0; i < enemiesCount; i++) {
-      enemiesHp[i] = Math.floor(level / 5);
-      enemiesHp[i]++;
-    }
+
     for (var i = 1; i <= enemiesCount; i++) {
       enemy = physics.add.sprite(500, 60 * i, 'enemy');
+      enemy.hp = Math.floor(level / 5) + 1;
       enemy.setOrigin(0.5);
       enemy.body.immovable = true;
       enemies.add(enemy);
