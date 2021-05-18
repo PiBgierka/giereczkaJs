@@ -261,7 +261,7 @@ function create() {
     this.physics.world.bounds.centerX,
     200,
     'GAME OVER',
-    { font: '40px Arial', fill: '#ffffff', align: 'center' }
+    { font: '40px Arial', fill: '#ff3300', align: 'center' }
   );
   gameoverText.setOrigin(0.5);
   gameoverText.visible = false;
