@@ -66,7 +66,7 @@ function topScore() {
   var s = '';
   for (var i = 0; i < x.length; i++) {
     if (i >= 5) break;
-    s += '<span class="top-e">' + (i + 1) + '. ' + x[i] + '</span><br/>';
+    s += '<span class="top-e">' + (i + 1) + '. ' + x[i] + ' pkt</span><br/>';
   }
   document.getElementById('top').innerHTML = s;
 }
