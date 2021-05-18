@@ -219,13 +219,13 @@ function update() {
   }
   if (shootCooldown > 200) {
     this.game.paused = !this.game.paused;
-    try {
-      shootCooldown = 0;
-      var index = Math.floor((Math.random() * 100) % (level % 5));
 
+    shootCooldown = 0;
+    var index = Math.floor((Math.random() * 100) % (level % 5));
+
+    try {
       while (this.enemies.getChildren()[index].hp <= 0) {
         index++;
-        Console.log(index);
         if (index >= level % 5) {
           index = 0;
         }
