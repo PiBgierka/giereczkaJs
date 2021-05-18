@@ -131,14 +131,7 @@ function create() {
         enem.disableBody(true, true);
         this.level++;
         this.damageBoss = false;
-        startNextLevel(
-          this.fizyka,
-          this.enemies,
-          this.rocks,
-          this.bossGroup,
-          this.miniBossGroup,
-          this.damageBoss
-        );
+        enemiesCount--;
       }
     } else {
       enem.body.velocity.x = 0;
