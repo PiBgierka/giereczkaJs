@@ -21,13 +21,17 @@ var config = {
     function: startNextLevel
   }
 };
-
+var HPText;
+var BossHPText;
+var ScoreText;
+var LvLText;
 var game = new Phaser.Game(config);
 var ball, ship, enemy, bullet;
 var enemies, bullets, rocks;
 var cursors;
 var counter = 0;
 var timesHited;
+var bossHPmess = '';
 var level = 0;
 var stage = 0;
 var enemiesCount = 0;
@@ -51,6 +55,45 @@ var HPP = document.getElementById('HPP');
 var BHP = document.getElementById('BHP');
 var scoreID = document.getElementById('scoreP');
 var rockTime = 0;
+function topScore() {
+  console.log(getCookie());
+  if (getCookie() == null) return;
+  if (getCookie().length == 0) return;
+  var x = JSON.parse(getCookie());
+  x.sort(function(a, b) {
+    return b - a;
+  });
+  var s = '';
+  for (var i = 0; i < x.length; i++) {
+    if (i >= 5) break;
+    s += '<span class="top-e">' + (i + 1) + '. ' + x[i] + '</span><br/>';
+  }
+  document.getElementById('top').innerHTML = s;
+}
+topScore();
+function addScore() {
+  console.log(getCookie());
+  var a = [];
+  if (getCookie() == null) {
+    a.push(score);
+
+    setCookie(JSON.stringify(a));
+    return;
+  }
+  if (getCookie().length == 0) {
+    a.push(score);
+    setCookie(JSON.stringify(a));
+    return;
+  }
+  var x = JSON.parse(getCookie());
+  x.push(score);
+  x.sort(function(a, b) {
+    return b - a;
+  });
+  if (x.length > 5) x = x.slice(0, 5);
+  // document.cookie = JSON.stringify(x);
+  setCookie(JSON.stringify(x));
+}
 function preload() {
   this.load.baseURL = 'https://examples.phaser.io/assets/';
   this.load.crossOrigin = 'anonymous';
@@ -71,11 +114,47 @@ function preload() {
   });
 }
 var fizyka;
+function updateHP(hp, t) {
+  t.setText('HP: ' + hp);
+}
+function updateBossHP(hp) {
+  BossHPText.setText('HP: ' + hp);
+}
 function create() {
   let back = this.add.tileSprite(0, 0, 680, 400, 'background');
   back.setOrigin(0);
   back.setScrollFactor(0);
+  var style = {
+    font: 'bold 19px Arial',
+    fill: '#ff6666',
+    boundsAlignH: 'center',
+    boundsAlignV: 'middle'
+  };
+  var style2 = {
+    font: 'bold 19px Arial',
+    fill: '#99ff99',
+    boundsAlignH: 'center',
+    boundsAlignV: 'middle'
+  };
+  var style3 = {
+    font: 'bold 19px Arial',
+    fill: '#66ccff',
+    boundsAlignH: 'center',
+    boundsAlignV: 'middle'
+  };
+  this.ScoreText = this.add.text(550, 360, 'SCORE: 0', style3);
+  this.ScoreText.setShadow(3, 3, 'rgba(1,0,1,1)', 2);
+  this.LvLText = this.add.text(20, 30, 'LVL: 0', style2);
+  this.LvLText.setShadow(3, 3, 'rgba(1,0,1,1)', 2);
 
+  this.HPText = this.add.text(20, 10, 'HP: 100', style2);
+  this.HPText.setShadow(3, 3, 'rgba(1,0,1,1)', 2);
+  //this.HPText.addColor('#00ff00', 3);
+  //this.HPText.setTextBounds(0, 100, 800, 100);
+
+  this.BossHPText = this.add.text(570, 10, 'BOSS (~)', style);
+  this.BossHPText.setShadow(3, 3, 'rgba(1,0,1,1)', 2);
+  //this.BossHPText.setTextBounds(0, 100, 800, 100);
   ship = this.physics.add.sprite(150, 380, 'ship');
   ship.setOrigin(0.5);
   ship.body.collideWorldBounds = true;
@@ -88,8 +167,7 @@ function create() {
   this.starGroup = this.physics.add.group();
   this.bossGroup = this.physics.add.group();
   this.miniBossGroup = this.physics.add.group();
-  HPP.innerHTML = 'HP: ' + PlayerHP;
-  scoreID.innerHTML = 'Score: ' + score;
+  this.HPText.setText('HP: ' + PlayerHP);
 
   this.anims.create({
     key: 'fly',
@@ -124,11 +202,13 @@ function create() {
     if (enem.dmg) {
       enem.body.velocity.x = 0;
       enem.hp--;
-      BHP.innerHTML = 'BOSS (OSŁABIONY): ' + enem.hp;
+      //BHP.innerHTML = 'BOSS (OSŁABIONY): ' + enem.hp;
+      bossHPmess = 'BOSS: (' + boss.hp + ')';
       bull.disableBody(true, true);
       console.log('boss:' + enem.hp);
       if (enem.hp <= 0) {
         enem.disableBody(true, true);
+        bossHPmess = '';
         this.level++;
         this.damageBoss = false;
         enemiesCount--;
@@ -150,28 +230,31 @@ function create() {
   this.physics.add.collider(this.miniBossGroup, ship, function(ship, bull) {
     bull.disableBody(true, true);
     PlayerHP--;
-    HPP.innerHTML = 'HP: ' + PlayerHP;
+    //HPP.innerHTML = 'HP: ' + PlayerHP;
     if (PlayerHP == 0) {
       ship.disableBody(true, true);
       gameoverText.visible = true;
+      addScore();
     }
   });
   this.physics.add.collider(this.enemyBullets, ship, function(ship, bull) {
     bull.disableBody(true, true);
     PlayerHP--;
-    HPP.innerHTML = 'HP: ' + PlayerHP;
+    //HPP.innerHTML = 'HP: ' + PlayerHP;
     if (PlayerHP == 0) {
       ship.disableBody(true, true);
       gameoverText.visible = true;
+      addScore();
     }
   });
   this.physics.add.collider(this.rocks, ship, function(ship, rock) {
     rock.disableBody(true, true);
     PlayerHP--;
-    HPP.innerHTML = 'HP: ' + PlayerHP;
+    //HPP.innerHTML = 'HP: ' + PlayerHP;
     if (PlayerHP == 0) {
       ship.disableBody(true, true);
       gameoverText.visible = true;
+      addScore();
     }
   });
   gameoverText = this.add.text(
@@ -191,7 +274,19 @@ function update() {
   scoreCount++;
   rockTime++;
   movement();
-
+  //update text HP
+  if (this.HPText.text != 'HP: ' + PlayerHP) {
+    this.HPText.setText('HP: ' + PlayerHP);
+  }
+  if (this.BossHPText.text != bossHPmess) {
+    this.BossHPText.setText(bossHPmess);
+  }
+  if (this.ScoreText.text != 'SCORE: ' + score) {
+    this.ScoreText.setText('SCORE: ' + score);
+  }
+  if (this.LvLText.text != 'LVL: ' + level) {
+    this.LvLText.setText('LVL: ' + level);
+  }
   //shooting
   if (cursors.space.isDown && counter > 20) {
     counter = 0;
@@ -277,13 +372,15 @@ function update() {
       r.body.velocity.y = ile;
     }
   }
+  //miniboss zachowanie
   if (this.miniBossGroup.getChildren().length != 0) {
     for (var i = 0; i < this.miniBossGroup.getChildren().length; i++) {
       var r = this.miniBossGroup.getChildren()[i];
-      if (ship.x > r.x) continue;
+      //if (ship.x > r.x) continue;
       var ile = ship.y > r.y ? 50 : -50;
+      var ileX = ship.x > r.x ? 50 : -50;
       r.body.velocity.y = ile;
-      if (0 < r.x) r.body.velocity.x = -50 - Math.random() * 100;
+      if (0 < r.x) r.body.velocity.x = ileX - Math.random() * 25;
       else {
         r.body.velocity.x = 0;
         r.disableBody(true, true);
@@ -306,7 +403,7 @@ function update() {
     this.physics.add.collider(star, ship, function(star, ship) {
       star.disableBody(true, true);
       score++;
-      scoreID.innerHTML = 'Score: ' + score;
+      //scoreID.innerHTML = 'Score: ' + score;
     });
   }
   if (enemiesCount == 0) {
@@ -350,11 +447,12 @@ function startNextLevel(
   } else {
     //spawnBoosa
     damageBoss = false;
-    BHP.innerHTML = 'BOSS (NIEŚMIERTELNY)';
+    //BHP.innerHTML = 'BOSS (NIEŚMIERTELNY)';
+    bossHPmess = 'BOSS: (~)';
     enemiesCount = 1;
     boss = physics.add.sprite(490, 200, 'boss');
 
-    boss.hp = level * 1;
+    boss.hp = level * 2;
     boss.dmg = false;
     for (var ind = 0; ind < 6; ind++) {
       miniBoss = physics.add.sprite(490 - 10 * ind, 200 + 15 * ind, 'miniboss');
@@ -375,12 +473,14 @@ function startNextLevel(
     }, 7000);
 
     setTimeout(function() {
-      BHP.innerHTML = 'BOSS (OSŁABIONY): ' + boss.hp;
+      //BHP.innerHTML = 'BOSS (OSŁABIONY): ' + boss.hp;
+      bossHPmess = 'BOSS: (' + boss.hp + ')';
       boss.dmg = true;
     }, 12000);
     setTimeout(function() {
       boss.dmg = false;
-      BHP.innerHTML = 'BOSS (NIEŚMIERTELNY)';
+      //BHP.innerHTML = 'BOSS (NIEŚMIERTELNY)';
+      bossHPmess = 'BOSS: (~)';
       for (var ind = 0; ind < 6; ind++) {
         miniBoss = physics.add.sprite(
           490 - 10 * ind,
@@ -392,9 +492,10 @@ function startNextLevel(
       }
     }, 15000);
     setTimeout(function() {
-      BHP.innerHTML = 'BOSS (OSŁABIONY): ' + boss.hp;
+      //BHP.innerHTML = 'BOSS (OSŁABIONY): ' + boss.hp;
+      bossHPmess = 'BOSS: (' + boss.hp + ')';
       boss.dmg = true;
-    }, 30000);
+    }, 25000);
 
     enemy.body.immovable = true;
     bossGroup.add(boss);
@@ -414,4 +515,24 @@ function movement() {
   } else if (cursors.right.isDown) {
     ship.body.velocity.x = 250;
   }
+}
+function setCookie(v) {
+  var d = new Date();
+  d.setTime(d.getTime() + 7 * 24 * 60 * 60 * 1000);
+  var expires = 'expires=' + d.toUTCString();
+  document.cookie = 'top=' + v + ';' + expires + ';path=/';
+}
+function getCookie() {
+  var name = 'top=';
+  var cc = document.cookie.split(';');
+  for (var i = 0; i < cc.length; i++) {
+    var c = cc[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return '';
 }
